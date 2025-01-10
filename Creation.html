@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créer un Sondage</title>
+    <!-- Inclure Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container my-5">
+        <h1 class="text-center text-primary">Créer un Sondage</h1>
+        <p class="text-center text-muted">Remplissez le formulaire pour créer un sondage avec des questions.</p>
+
+        <form action="save_poll.php" method="POST">
+            <div class="mb-3">
+                <label for="pollName" class="form-label">Nom du sondage (unique)</label>
+                <input type="text" class="form-control" id="pollName" name="pollName" placeholder="Entrez le nom du sondage" required>
+            </div>
+
+            <div id="questionsContainer">
+                <!-- Conteneur des questions -->
+            </div>
+
+            <button type="button" id="addQuestionBtn" class="btn btn-outline-success mb-3">Ajouter une question</button>
+            <button type="submit" class="btn btn-primary w-100">Enregistrer le sondage</button>
+        </form>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        let questionIndex = 0;
+
+        // Fonction pour ajouter une nouvelle question
+        function addQuestion() {
+            const container = document.getElementById('questionsContainer');
+            const newQuestion = document.createElement('div');
+            newQuestion.classList.add('question', 'mb-4');
+            newQuestion.innerHTML = `
+                <h4>Question ${questionIndex + 1}</h4>
+                <div class="mb-3">
+                    <label class="form-label">Intitulé de la question</label>
+                    <input type="text" class="form-control" name="questions[${questionIndex}][title]" placeholder="Entrez l'intitulé" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Type de la question</label>
+                    <select class="form-select question-type" name="questions[${questionIndex}][type]" required>
+                        <option value="text">Text</option>
+                        <option value="choix_multiple">Choix multiple</option>
+                        <option value="choix_unique">Choix unique</option>
+                    </select>
+                </div>
+                <div class="responses-container mb-3 d-none">
+                    <label class="form-label">Réponses prédéfinies</label>
+                </div>
+            `;
+            container.appendChild(newQuestion);
+            questionIndex++;
+        }
+
+        // Ajouter une réponse à une question
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('add-response')) {
+                const container = e.target.closest('.responses-container');
+                const questionType = container.dataset.type;
+                const inputType = questionType === 'choix_multiple' ? 'checkbox' : 'radio';
+                const questionId = container.dataset.questionId;
+                const responseCount = container.querySelectorAll('.response-item').length + 1;
+
+                const newResponse = document.createElement('div');
+                newResponse.classList.add('response-item', 'd-flex', 'align-items-center', 'mb-2');
+                newResponse.innerHTML = `
+                    <input type="${inputType}" name="questions[${questionId}][responses][]" class="form-check-input me-2">
+                    <input type="text" class="form-control" value="Réponse ${responseCount}">
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-2 remove-response">&times;</button>
+                `;
+                container.insertBefore(newResponse, e.target);
+            }
+        });
+
+        // Suppression d'une réponse
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-response')) {
+                const container = e.target.closest('.responses-container');
+                const responseItem = e.target.closest('.response-item');
+                container.removeChild(responseItem);
+
+                // Re-numérotation des réponses restantes
+                const remainingResponses = container.querySelectorAll('.response-item');
+                remainingResponses.forEach((response, index) => {
+                    const input = response.querySelector('input[type="text"]');
+                    if (input) {
+                        input.value = `Réponse ${index + 1}`;
+                    }
+                });
+            }
+        });
+
+        // Afficher les réponses ou la zone de texte en fonction du type de question
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('question-type')) {
+                const questionDiv = e.target.closest('.question');
+                const responsesContainer = questionDiv.querySelector('.responses-container');
+                const questionId = Array.from(document.getElementById('questionsContainer').children).indexOf(questionDiv);
+
+                // Réinitialiser les réponses
+                responsesContainer.classList.add('d-none');
+                responsesContainer.innerHTML = '';
+                responsesContainer.dataset.type = e.target.value;
+                responsesContainer.dataset.questionId = questionId;
+
+                if (e.target.value === 'choix_multiple' || e.target.value === 'choix_unique') {
+                    responsesContainer.classList.remove('d-none');
+
+                    // Ajouter deux réponses de base
+                    const inputType = e.target.value === 'choix_multiple' ? 'checkbox' : 'radio';
+                    for (let i = 0; i < 2; i++) {
+                        const newResponse = document.createElement('div');
+                        newResponse.classList.add('response-item', 'd-flex', 'align-items-center', 'mb-2');
+                        newResponse.innerHTML = `
+                            <input type="${inputType}" name="questions[${questionId}][responses][]" class="form-check-input me-2">
+                            <input type="text" class="form-control" value="Réponse ${i + 1}">
+                            <button type="button" class="btn btn-sm btn-outline-danger ms-2 remove-response">&times;</button>
+                        `;
+                        responsesContainer.appendChild(newResponse);
+                    }
+
+                    // Ajouter le bouton pour ajouter plus de réponses
+                    const addResponseButton = document.createElement('button');
+                    addResponseButton.type = 'button';
+                    addResponseButton.classList.add('btn', 'btn-sm', 'btn-outline-primary', 'add-response');
+                    addResponseButton.textContent = 'Ajouter une réponse';
+                    responsesContainer.appendChild(addResponseButton);
+                } else if (e.target.value === 'text') {
+                    // Ajouter une zone de texte pour le type "Text"
+                    responsesContainer.classList.remove('d-none');
+                    responsesContainer.innerHTML = `
+                        <textarea class="form-control" placeholder="Réponse libre" disabled></textarea>
+                    `;
+                }
+            }
+        });
+
+        // Ajouter la première question au chargement
+        addQuestion();
+
+        // Ajouter une nouvelle question au clic
+        document.getElementById('addQuestionBtn').addEventListener('click', addQuestion);
+    </script>
+</body>
+</html>
