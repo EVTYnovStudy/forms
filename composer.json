@@ -1,0 +1,15 @@
+{
+    "name": "swan/forms",
+    "autoload": {
+        "psr-4": {
+            "Swan\\Forms\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "swanbreton",
+            "email": "swan.breton75@gmail.com"
+        }
+    ],
+    "require": {}
+}

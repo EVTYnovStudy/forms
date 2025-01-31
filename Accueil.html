@@ -4,19 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accueil</title>
-    <!-- Inclure Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #f4f4f9; /* Fond gris clair */
+            background-color: #f4f4f9; 
         }
         .container-box {
-            max-width: 800px; /* Même largeur que Creation.html */
+            max-width: 800px; 
             background: white;
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-            margin: 50px auto; /* Centrage */
+            margin: 50px auto; 
             text-align: center;
         }
         .survey-card {
@@ -43,13 +42,11 @@
 
             <h4 class="text-secondary">📋 Sondages enregistrés</h4>
             <div id="surveyList">
-                <!-- Les sondages enregistrés s'afficheront ici -->
             </div>
         </div>
     </div>
 
     <script>
-        // Simule des sondages enregistrés (tu pourras remplacer par un appel MongoDB)
         const surveys = [
             { id: 1, name: "Satisfaction client" },
             { id: 2, name: "Préférences alimentaires" },

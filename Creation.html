@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Créer un sondage</title>
-    <!-- Inclure Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #f4f4f9; /* Fond gris clair */
+            background-color: #f4f4f9; 
         }
         .form-container {
             max-width: 800px;
@@ -18,34 +17,27 @@
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
             margin: 50px auto;
         }
-        .remove-btn {
-            cursor: pointer;
-            color: red;
-            margin-left: 10px;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="form-container">
             <h2 class="text-center text-primary">Créer un sondage</h2>
-            <p class="text-muted text-center">Ajoutez vos questions et définissez leur type.</p>
-
-            <!-- Champ Nom du sondage -->
-            <div class="mb-3">
-                <label for="surveyName" class="form-label">Nom du sondage</label>
-                <input type="text" class="form-control" id="surveyName" placeholder="Ex: Sondage sur la satisfaction">
-            </div>
-
-            <!-- Section des questions -->
-            <div id="questionsContainer">
-                <h4 class="text-secondary">Questions</h4>
-            </div>
-
-            <button class="btn btn-outline-primary mt-3" id="addQuestion">Ajouter une question</button>
-
-            <hr>
-            <button class="btn btn-success w-100 mt-3">Enregistrer le sondage</button>
+            <form method="POST" action="Creation.php"  onsubmit= "preparePollData(event)">
+                <input type="hidden" name="pollName" id="pollNameInput">
+                <input type="hidden" name="questions" id="questionsInput">
+                <div class="mb-3">
+                    <label for="pollName" class="form-label">Nom du sondage</label>
+                    <input type="text" class="form-control" id="pollName" name="pollName" required placeholder="Ex: Sondage sur la satisfaction">
+                </div>
+                <div id="questionsContainer">
+                    <h4 class="text-secondary">Questions</h4>
+                    <!-- Les questions seront ajoutées ici dynamiquement -->
+                </div>
+                <button type="button" class="btn btn-outline-primary mt-3" id="addQuestion">Ajouter une question</button>
+                <hr>
+                <button type="submit" class="btn btn-success w-100 mt-3">Enregistrer le sondage</button>
+            </form>
         </div>
     </div>
 
@@ -58,10 +50,10 @@
             questionDiv.classList.add("border", "rounded", "p-3", "mb-3", "bg-light");
             questionDiv.innerHTML = `
                 <label class="form-label">Question ${questionCount}</label>
-                <input type="text" class="form-control mb-2" placeholder="Entrez votre question">
+                <input type="text" class="form-control mb-2" name="questions[${questionCount}][questionText]" placeholder="Entrez votre question" required>
                 
                 <label class="form-label">Type de réponse</label>
-                <select class="form-select question-type" onchange="updateQuestionType(this, ${questionCount})">
+                <select class="form-select" name="questions[${questionCount}][type]" onchange="updateQuestionType(this, ${questionCount})">
                     <option value="text">Texte</option>
                     <option value="unique">Choix Unique</option>
                     <option value="multiple">Choix Multiple</option>
@@ -70,15 +62,11 @@
                 <div class="answers-container mt-3" id="answers-${questionCount}">
                     <!-- Les réponses vont être ajoutées ici -->
                 </div>
-                
-                <button class="btn btn-info btn-sm text-white mt-2 add-answer-btn" onclick="addAnswer(${questionCount})" style="display:none;">
+
+                <button type="button" class="btn btn-primary btn-sm text-white mt-2 add-answer-btn" onclick="addAnswer(${questionCount})" style="display:none;">
                     Ajouter une réponse
                 </button>
-
-
-                <button class="btn btn-danger btn-sm mt-2" onclick="removeQuestion(this)">Supprimer la question</button>
             `;
-
             document.getElementById("questionsContainer").appendChild(questionDiv);
         });
 
@@ -89,29 +77,28 @@
             answersContainer.innerHTML = "";
             
             if (select.value === "text") {
-                answersContainer.innerHTML = `<input type="text" class="form-control mt-2" placeholder="Réponse utilisateur">`;
+                answersContainer.innerHTML = `<input type="text" class="form-control mt-2" name="questions[${questionId}][answer]" placeholder="Réponse utilisateur">`;
                 addAnswerBtn.style.display = "none";
             } else {
                 addAnswerBtn.style.display = "block";
-                addAnswer(questionId); // Ajouter 1 réponse de base
-                addAnswer(questionId); // Ajouter 2ème réponse de base
+                addAnswer(questionId); 
+                addAnswer(questionId); 
             }
         }
 
         function addAnswer(questionId) {
             const answersContainer = document.getElementById(`answers-${questionId}`);
-            const questionType = document.querySelector(`#answers-${questionId}`).parentElement.querySelector(".question-type").value;
+            const questionType = document.querySelector(`#answers-${questionId}`).parentElement.querySelector("select").value;
 
             const answerIndex = answersContainer.childElementCount + 1;
             const answerDiv = document.createElement("div");
             answerDiv.classList.add("d-flex", "align-items-center", "mt-2");
 
             answerDiv.innerHTML = `
-                <input type="${questionType === 'multiple' ? 'checkbox' : 'radio'}" name="question-${questionId}">
-                <input type="text" class="form-control ms-2" value="Réponse ${answerIndex}">
+                <input type="${questionType === 'multiple' ? 'checkbox' : 'radio'}" name="questions[${questionId}][answers][]" value="Réponse ${answerIndex}">
+                <input type="text" class="form-control ms-2" name="questions[${questionId}][answerText][]" value="Réponse ${answerIndex}">
                 <span class="remove-btn" onclick="removeAnswer(this)">❌</span>
             `;
-
             answersContainer.appendChild(answerDiv);
         }
 
@@ -128,12 +115,40 @@
                 index++;
             });
         }
-
-        function removeQuestion(button) {
-            button.parentElement.remove();
-            questionCount--;
-        }
     </script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>  function preparePollData(event) {
+        event.preventDefault();
+
+        // Récupérer les questions
+        const questionsContainer = document.getElementById("questionsContainer");
+        const questionDivs = questionsContainer.querySelectorAll(".border");
+        const questions = [];
+
+        questionDivs.forEach((div, index) => {
+            const questionText = div.querySelector("input[type='text']").value;
+            const questionType = div.querySelector(".question-type").value;
+
+            const answers = [];
+            if (questionType !== "text") {
+                const answerInputs = div.querySelectorAll(".answers-container input[type='text']");
+                answerInputs.forEach(input => answers.push(input.value));
+            }
+
+            questions.push({
+                questionText,
+                questionType,
+                answers
+            });
+        });
+
+        // Ajouter les données dans le formulaire caché
+        document.getElementById("pollNameInput").value = document.getElementById("surveyName").value;
+        document.getElementById("questionsInput").value = JSON.stringify(questions);
+
+        // Soumettre le formulaire
+        document.getElementById("pollForm").submit();
+    }</script>
 </body>
 </html>
