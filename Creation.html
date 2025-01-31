@@ -3,149 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Créer un Sondage</title>
+    <title>Créer un sondage</title>
     <!-- Inclure Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f4f9; /* Fond gris clair */
+        }
+        .form-container {
+            max-width: 800px;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            margin: 50px auto;
+        }
+        .remove-btn {
+            cursor: pointer;
+            color: red;
+            margin-left: 10px;
+        }
+    </style>
 </head>
 <body>
-    <div class="container my-5">
-        <h1 class="text-center text-primary">Créer un Sondage</h1>
-        <p class="text-center text-muted">Remplissez le formulaire pour créer un sondage avec des questions.</p>
+    <div class="container">
+        <div class="form-container">
+            <h2 class="text-center text-primary">Créer un sondage</h2>
+            <p class="text-muted text-center">Ajoutez vos questions et définissez leur type.</p>
 
-        <form action="save_poll.php" method="POST">
+            <!-- Champ Nom du sondage -->
             <div class="mb-3">
-                <label for="pollName" class="form-label">Nom du sondage (unique)</label>
-                <input type="text" class="form-control" id="pollName" name="pollName" placeholder="Entrez le nom du sondage" required>
+                <label for="surveyName" class="form-label">Nom du sondage</label>
+                <input type="text" class="form-control" id="surveyName" placeholder="Ex: Sondage sur la satisfaction">
             </div>
 
+            <!-- Section des questions -->
             <div id="questionsContainer">
-                <!-- Conteneur des questions -->
+                <h4 class="text-secondary">Questions</h4>
             </div>
 
-            <button type="button" id="addQuestionBtn" class="btn btn-outline-success mb-3">Ajouter une question</button>
-            <button type="submit" class="btn btn-primary w-100">Enregistrer le sondage</button>
-        </form>
+            <button class="btn btn-outline-primary mt-3" id="addQuestion">Ajouter une question</button>
+
+            <hr>
+            <button class="btn btn-success w-100 mt-3">Enregistrer le sondage</button>
+        </div>
     </div>
 
-    <!-- Scripts -->
     <script>
-        let questionIndex = 0;
+        let questionCount = 0;
 
-        // Fonction pour ajouter une nouvelle question
-        function addQuestion() {
-            const container = document.getElementById('questionsContainer');
-            const newQuestion = document.createElement('div');
-            newQuestion.classList.add('question', 'mb-4');
-            newQuestion.innerHTML = `
-                <h4>Question ${questionIndex + 1}</h4>
-                <div class="mb-3">
-                    <label class="form-label">Intitulé de la question</label>
-                    <input type="text" class="form-control" name="questions[${questionIndex}][title]" placeholder="Entrez l'intitulé" required>
+        document.getElementById("addQuestion").addEventListener("click", function() {
+            questionCount++;
+            const questionDiv = document.createElement("div");
+            questionDiv.classList.add("border", "rounded", "p-3", "mb-3", "bg-light");
+            questionDiv.innerHTML = `
+                <label class="form-label">Question ${questionCount}</label>
+                <input type="text" class="form-control mb-2" placeholder="Entrez votre question">
+                
+                <label class="form-label">Type de réponse</label>
+                <select class="form-select question-type" onchange="updateQuestionType(this, ${questionCount})">
+                    <option value="text">Texte</option>
+                    <option value="unique">Choix Unique</option>
+                    <option value="multiple">Choix Multiple</option>
+                </select>
+
+                <div class="answers-container mt-3" id="answers-${questionCount}">
+                    <!-- Les réponses vont être ajoutées ici -->
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Type de la question</label>
-                    <select class="form-select question-type" name="questions[${questionIndex}][type]" required>
-                        <option value="text">Text</option>
-                        <option value="choix_multiple">Choix multiple</option>
-                        <option value="choix_unique">Choix unique</option>
-                    </select>
-                </div>
-                <div class="responses-container mb-3 d-none">
-                    <label class="form-label">Réponses prédéfinies</label>
-                </div>
+                
+                <button class="btn btn-info btn-sm text-white mt-2 add-answer-btn" onclick="addAnswer(${questionCount})" style="display:none;">
+                    Ajouter une réponse
+                </button>
+
+
+                <button class="btn btn-danger btn-sm mt-2" onclick="removeQuestion(this)">Supprimer la question</button>
             `;
-            container.appendChild(newQuestion);
-            questionIndex++;
+
+            document.getElementById("questionsContainer").appendChild(questionDiv);
+        });
+
+        function updateQuestionType(select, questionId) {
+            const answersContainer = document.getElementById(`answers-${questionId}`);
+            const addAnswerBtn = select.parentElement.querySelector(".add-answer-btn");
+
+            answersContainer.innerHTML = "";
+            
+            if (select.value === "text") {
+                answersContainer.innerHTML = `<input type="text" class="form-control mt-2" placeholder="Réponse utilisateur">`;
+                addAnswerBtn.style.display = "none";
+            } else {
+                addAnswerBtn.style.display = "block";
+                addAnswer(questionId); // Ajouter 1 réponse de base
+                addAnswer(questionId); // Ajouter 2ème réponse de base
+            }
         }
 
-        // Ajouter une réponse à une question
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('add-response')) {
-                const container = e.target.closest('.responses-container');
-                const questionType = container.dataset.type;
-                const inputType = questionType === 'choix_multiple' ? 'checkbox' : 'radio';
-                const questionId = container.dataset.questionId;
-                const responseCount = container.querySelectorAll('.response-item').length + 1;
+        function addAnswer(questionId) {
+            const answersContainer = document.getElementById(`answers-${questionId}`);
+            const questionType = document.querySelector(`#answers-${questionId}`).parentElement.querySelector(".question-type").value;
 
-                const newResponse = document.createElement('div');
-                newResponse.classList.add('response-item', 'd-flex', 'align-items-center', 'mb-2');
-                newResponse.innerHTML = `
-                    <input type="${inputType}" name="questions[${questionId}][responses][]" class="form-check-input me-2">
-                    <input type="text" class="form-control" value="Réponse ${responseCount}">
-                    <button type="button" class="btn btn-sm btn-outline-danger ms-2 remove-response">&times;</button>
-                `;
-                container.insertBefore(newResponse, e.target);
-            }
-        });
+            const answerIndex = answersContainer.childElementCount + 1;
+            const answerDiv = document.createElement("div");
+            answerDiv.classList.add("d-flex", "align-items-center", "mt-2");
 
-        // Suppression d'une réponse
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-response')) {
-                const container = e.target.closest('.responses-container');
-                const responseItem = e.target.closest('.response-item');
-                container.removeChild(responseItem);
+            answerDiv.innerHTML = `
+                <input type="${questionType === 'multiple' ? 'checkbox' : 'radio'}" name="question-${questionId}">
+                <input type="text" class="form-control ms-2" value="Réponse ${answerIndex}">
+                <span class="remove-btn" onclick="removeAnswer(this)">❌</span>
+            `;
 
-                // Re-numérotation des réponses restantes
-                const remainingResponses = container.querySelectorAll('.response-item');
-                remainingResponses.forEach((response, index) => {
-                    const input = response.querySelector('input[type="text"]');
-                    if (input) {
-                        input.value = `Réponse ${index + 1}`;
-                    }
-                });
-            }
-        });
+            answersContainer.appendChild(answerDiv);
+        }
 
-        // Afficher les réponses ou la zone de texte en fonction du type de question
-        document.addEventListener('change', (e) => {
-            if (e.target.classList.contains('question-type')) {
-                const questionDiv = e.target.closest('.question');
-                const responsesContainer = questionDiv.querySelector('.responses-container');
-                const questionId = Array.from(document.getElementById('questionsContainer').children).indexOf(questionDiv);
+        function removeAnswer(element) {
+            const answerContainer = element.parentElement.parentElement;
+            element.parentElement.remove();
+            updateAnswerNumbers(answerContainer);
+        }
 
-                // Réinitialiser les réponses
-                responsesContainer.classList.add('d-none');
-                responsesContainer.innerHTML = '';
-                responsesContainer.dataset.type = e.target.value;
-                responsesContainer.dataset.questionId = questionId;
+        function updateAnswerNumbers(container) {
+            let index = 1;
+            container.querySelectorAll("input[type='text']").forEach(input => {
+                input.value = `Réponse ${index}`;
+                index++;
+            });
+        }
 
-                if (e.target.value === 'choix_multiple' || e.target.value === 'choix_unique') {
-                    responsesContainer.classList.remove('d-none');
-
-                    // Ajouter deux réponses de base
-                    const inputType = e.target.value === 'choix_multiple' ? 'checkbox' : 'radio';
-                    for (let i = 0; i < 2; i++) {
-                        const newResponse = document.createElement('div');
-                        newResponse.classList.add('response-item', 'd-flex', 'align-items-center', 'mb-2');
-                        newResponse.innerHTML = `
-                            <input type="${inputType}" name="questions[${questionId}][responses][]" class="form-check-input me-2">
-                            <input type="text" class="form-control" value="Réponse ${i + 1}">
-                            <button type="button" class="btn btn-sm btn-outline-danger ms-2 remove-response">&times;</button>
-                        `;
-                        responsesContainer.appendChild(newResponse);
-                    }
-
-                    // Ajouter le bouton pour ajouter plus de réponses
-                    const addResponseButton = document.createElement('button');
-                    addResponseButton.type = 'button';
-                    addResponseButton.classList.add('btn', 'btn-sm', 'btn-outline-primary', 'add-response');
-                    addResponseButton.textContent = 'Ajouter une réponse';
-                    responsesContainer.appendChild(addResponseButton);
-                } else if (e.target.value === 'text') {
-                    // Ajouter une zone de texte pour le type "Text"
-                    responsesContainer.classList.remove('d-none');
-                    responsesContainer.innerHTML = `
-                        <textarea class="form-control" placeholder="Réponse libre" disabled></textarea>
-                    `;
-                }
-            }
-        });
-
-        // Ajouter la première question au chargement
-        addQuestion();
-
-        // Ajouter une nouvelle question au clic
-        document.getElementById('addQuestionBtn').addEventListener('click', addQuestion);
+        function removeQuestion(button) {
+            button.parentElement.remove();
+            questionCount--;
+        }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
