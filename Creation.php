@@ -1,75 +1,83 @@
 <?php
-// Activez l'affichage des erreurs pour le débogage
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// Inclure la bibliothèque MongoDB (assurez-vous que le chemin est correct)
-require 'vendor/autoload.php';
+require 'vendor/autoload.php'; // Charge les dépendances installées via Composer
 
 use MongoDB\Client;
 
-// Connexion à MongoDB (remplacez par vos informations d'authentification)
+// Connexion à MongoDB Atlas
 $client = new Client("mongodb+srv://louiscolombel46:zApC5jCnbzcDJSpC@forms.lfhej.mongodb.net/");
-$db = $client->google_forms_clone;
-$formsCollection = $db->forms;
-$questionsCollection = $db->questions;
 
-// Vérifier si le formulaire a été soumis en POST
+// Sélectionne la base de données et les collections
+$database = $client->selectDatabase("forms");
+$formCollection = $database->selectCollection("form");
+$responsesCollection = $database->selectCollection("responses");
+
+// Vérifier la méthode HTTP
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Vérifier que les données nécessaires sont présentes dans $_POST
-    if (isset($_POST['pollName']) && isset($_POST['questions'])) {
-        // Récupérer les données du formulaire
+
+    // Vérifier si c'est un sondage ou une réponse
+    if (!empty($_POST['pollName']) && !empty($_POST['questions'])) {
+        // 🚀 Enregistrement d'un **sondage**
         $pollName = $_POST['pollName'];
-        $questions = $_POST['questions']; // Un tableau de questions envoyé depuis le formulaire
+        $questions = json_decode($_POST['questions'], true);
 
-        // Générer un ID unique pour le formulaire
-        $formId = uniqid("form_");
+        if (!is_array($questions)) {
+            echo "Erreur: les questions ne sont pas valides.";
+            exit;
+        }
 
-        // Sauvegarder le formulaire dans la collection "forms" de MongoDB
-        $formDocument = [
-            "id" => $formId,
-            "title" => $pollName,
-            "createdAt" => new \MongoDB\BSON\UTCDateTime() // Utilisation de la date UTC pour MongoDB
+        // Création du document à insérer
+        $document = [
+            'pollName' => $pollName,
+            'questions' => $questions,
+            'createdAt' => new MongoDB\BSON\UTCDateTime(),
         ];
 
-        // Insérer le formulaire dans la collection MongoDB
         try {
-            $formsCollection->insertOne($formDocument);
-        } catch (Exception $e) {
-            echo "Erreur lors de l'insertion du formulaire : " . $e->getMessage();
-            exit();
-        }
-
-        // Sauvegarder chaque question dans la collection "questions" de MongoDB
-        foreach ($questions as $question) {
-            $questionId = uniqid("question_");
-            $questionDocument = [
-                "_id" => $questionId,
-                "formId" => $formId,
-                "questionText" => $question['questionText'],
-                "type" => $question['type'],
-                "answers" => isset($question['answers']) ? $question['answers'] : [] // Si des réponses sont définies
-            ];
-
-            // Insérer chaque question dans la collection MongoDB
-            try {
-                $questionsCollection->insertOne($questionDocument);
-            } catch (Exception $e) {
-                echo "Erreur lors de l'insertion de la question : " . $e->getMessage();
-                exit();
+            $result = $formCollection->insertOne($document);
+            if ($result->getInsertedCount() === 1) {
+                echo json_encode([
+                    "success" => true,
+                    "message" => "Sondage ajouté avec succès !",
+                    "formId" => (string)$result->getInsertedId()
+                ]);
+            } else {
+                echo json_encode(["success" => false, "message" => "Erreur lors de l'insertion du sondage."]);
             }
+        } catch (Exception $e) {
+            echo json_encode(["success" => false, "message" => "Erreur MongoDB: " . $e->getMessage()]);
         }
 
-        // Message de succès après l'insertion des données
-        echo "Sondage et questions enregistrés avec succès dans MongoDB !";
-        echo '<br><a href="index.html">Retour à l\'accueil</a>';
+    } elseif (!empty($_POST['formId']) && !empty($_POST['answers'])) {
+        // 📝 Enregistrement des **réponses**
+        $formId = $_POST['formId'];
+        $answers = json_decode($_POST['answers'], true);
+
+        if (!is_array($answers)) {
+            echo json_encode(["success" => false, "message" => "Les réponses ne sont pas valides."]);
+            exit;
+        }
+
+        $document = [
+            'formId' => $formId,
+            'answers' => $answers,
+            'submittedAt' => new MongoDB\BSON\UTCDateTime(),
+        ];
+
+        try {
+            $result = $responsesCollection->insertOne($document);
+            if ($result->getInsertedCount() === 1) {
+                echo json_encode(["success" => true, "message" => "Réponses enregistrées avec succès !"]);
+            } else {
+                echo json_encode(["success" => false, "message" => "Erreur lors de l'enregistrement des réponses."]);
+            }
+        } catch (Exception $e) {
+            echo json_encode(["success" => false, "message" => "Erreur MongoDB: " . $e->getMessage()]);
+        }
+
     } else {
-        // Si des données manquent, afficher un message d'erreur
-        echo "Erreur: les données du formulaire sont incomplètes.";
+        echo json_encode(["success" => false, "message" => "Données invalides."]);
     }
 } else {
-    // Si la requête n'est pas en POST, afficher un message d'erreur
-    echo "Aucune donnée envoyée.";
+    echo json_encode(["success" => false, "message" => "Méthode HTTP non supportée."]);
 }
 ?>
-

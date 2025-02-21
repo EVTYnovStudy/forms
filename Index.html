@@ -65,7 +65,7 @@
             surveys.forEach(survey => {
                 const surveyDiv = document.createElement("div");
                 surveyDiv.classList.add("survey-card");
-                surveyDiv.innerHTML = `<strong>${survey.name}</strong>`;
+                surveyDiv.innerHTML = <strong>${survey.name}</strong>;
                 surveyDiv.onclick = () => alert("Ouvrir le sondage: " + survey.name);
                 surveyList.appendChild(surveyDiv);
             });

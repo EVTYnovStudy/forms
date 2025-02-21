@@ -7,7 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #f4f4f9; 
+            background-color: #f4f4f9;
         }
         .form-container {
             max-width: 800px;
@@ -23,7 +23,7 @@
     <div class="container">
         <div class="form-container">
             <h2 class="text-center text-primary">Créer un sondage</h2>
-            <form method="POST" action="Creation.php"  onsubmit= "preparePollData(event)">
+            <form method="POST" action="Creation.php" id="pollForm" onsubmit="preparePollData(event)">
                 <input type="hidden" name="pollName" id="pollNameInput">
                 <input type="hidden" name="questions" id="questionsInput">
                 <div class="mb-3">
@@ -53,7 +53,7 @@
                 <input type="text" class="form-control mb-2" name="questions[${questionCount}][questionText]" placeholder="Entrez votre question" required>
                 
                 <label class="form-label">Type de réponse</label>
-                <select class="form-select" name="questions[${questionCount}][type]" onchange="updateQuestionType(this, ${questionCount})">
+                <select class="form-select question-type" name="questions[${questionCount}][type]" onchange="updateQuestionType(this, ${questionCount})">
                     <option value="text">Texte</option>
                     <option value="unique">Choix Unique</option>
                     <option value="multiple">Choix Multiple</option>
@@ -115,40 +115,50 @@
                 index++;
             });
         }
+
+        function preparePollData(event) {
+    event.preventDefault(); // Empêcher l'envoi du formulaire par défaut
+
+    // Récupérer le nom du sondage
+    const pollName = document.getElementById("pollName").value;
+
+    // Récupérer les questions
+    const questionsContainer = document.getElementById("questionsContainer");
+    const questionDivs = questionsContainer.querySelectorAll(".border");
+    const questions = [];
+
+    questionDivs.forEach((div, index) => {
+        const questionText = div.querySelector("input[type='text']").value;
+        const questionType = div.querySelector(".question-type").value;
+
+        const answers = [];
+        if (questionType !== "text") {
+            const answerInputs = div.querySelectorAll(".answers-container input[type='text']");
+            answerInputs.forEach(input => answers.push(input.value));
+        }
+
+        questions.push({
+            questionText,
+            type: questionType,
+            answers
+        });
+    });
+
+    // Ajouter les données dans les champs cachés
+    document.getElementById("pollNameInput").value = pollName;
+    document.getElementById("questionsInput").value = JSON.stringify(questions);
+
+    // Afficher les données dans la console avant la soumission
+    console.log("Données du sondage:", {
+        pollName: pollName,
+        questions: questions
+    });
+
+    // Soumettre le formulaire
+    document.getElementById("pollForm").submit();
+}
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>  function preparePollData(event) {
-        event.preventDefault();
-
-        // Récupérer les questions
-        const questionsContainer = document.getElementById("questionsContainer");
-        const questionDivs = questionsContainer.querySelectorAll(".border");
-        const questions = [];
-
-        questionDivs.forEach((div, index) => {
-            const questionText = div.querySelector("input[type='text']").value;
-            const questionType = div.querySelector(".question-type").value;
-
-            const answers = [];
-            if (questionType !== "text") {
-                const answerInputs = div.querySelectorAll(".answers-container input[type='text']");
-                answerInputs.forEach(input => answers.push(input.value));
-            }
-
-            questions.push({
-                questionText,
-                questionType,
-                answers
-            });
-        });
-
-        // Ajouter les données dans le formulaire caché
-        document.getElementById("pollNameInput").value = document.getElementById("surveyName").value;
-        document.getElementById("questionsInput").value = JSON.stringify(questions);
-
-        // Soumettre le formulaire
-        document.getElementById("pollForm").submit();
-    }</script>
 </body>
 </html>

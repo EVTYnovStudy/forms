@@ -11,5 +11,8 @@
             "email": "swan.breton75@gmail.com"
         }
     ],
-    "require": {}
+    "require": {
+        "mongodb/mongodb": "^1.20",
+        "ramsey/uuid": "^4.7"
+    }
 }
