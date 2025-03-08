@@ -1,0 +1,40 @@
+# 📌 Projet de Sondage (React + Node.js)
+Ce projet est une application de sondage développée avec React pour le front-end et Node.js avec Express pour le back-end.
+
+## 🛠️ Installation et Lancement
+
+### 1️⃣ Cloner le projet
+git clone https://github.com/TON-UTILISATEUR/NOM-DU-DEPOT.git
+cd NOM-DU-DEPOT
+
+### 2️⃣ Installation des dépendances
+Installe les dépendances pour le back-end et le front-end :
+
+# Backend
+cd backend
+npm install
+
+# Frontend
+cd ../frontend
+npm install
+
+### 3️⃣ Configuration de l'environnement
+Dans le fichier server.js, cremplacé VOTRE_CLE_MONGO par votre clé personnel
+
+### 4️⃣ Lancer l'application
+# 🚀 Démarrer le serveur back-end
+Dans le dossier backend, exécute :
+npm start
+
+
+# 🎨 Démarrer le front-end
+Dans le dossier frontend, exécute :
+npm start
+
+### 📌 Technologies utilisées
+Front-end : React, Bootstrap
+Back-end : Node.js, Express
+Base de données : MongoDB avec Mongoose
+
+### 📞 Contact
+Si vous avez des questions, n'hésitez pas à me contacter.
